@@ -1,29 +1,13 @@
 const express = require("express");
-const passport = require("passport");
 const authController = require("../controllers/auth.controller");
-
-passport.use(authController.localStrategy);
-
-passport.serializeUser((user, done) => {
-  process.nextTick(() => {
-    done(null, { id: user._id, email: user.email });
-  });
-});
-
-passport.deserializeUser((user, done) => {
-  process.nextTick(() => {
-    return done(null, user);
-  });
-});
+const middleware = require("../utils/middleware");
 
 const router = express.Router();
 
 router.post("/register", authController.register);
 
-router.post("/login", passport.authenticate("local"), (req, res) => {
-  return res.send("Logged in successfully.");
-});
+router.post("/login", middleware.checkLoggedIn, authController.logIn);
 
-router.delete("/logout", authController.logout);
+router.delete("/logout", middleware.checkAuthenticated, authController.logout);
 
 module.exports = router;

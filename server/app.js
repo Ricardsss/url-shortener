@@ -1,8 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
-const cookieParser = require("cookie-parser");
-const bodyParser = require("body-parser");
 const MongoStore = require("connect-mongo");
 const passport = require("passport");
 const connectDB = require("./database/mongoose");
@@ -16,8 +14,7 @@ const MONGO_URI = process.env.MONGO_URI
 const app = express();
 
 const registerHooks = () => {
-  app.use(bodyParser.json());
-  app.use(cookieParser());
+  app.use(express.json());
   app.use(
     session({
       secret: process.env.SESSION_SECRET,
@@ -26,7 +23,8 @@ const registerHooks = () => {
       store: MongoStore.create({ mongoUrl: MONGO_URI }),
     })
   );
-  app.use(passport.authenticate("session"));
+  app.use(passport.initialize());
+  app.use(passport.session());
 };
 
 const registerRoutes = () => {
