@@ -4,10 +4,18 @@ const middleware = require("../utils/middleware");
 
 const router = express.Router();
 
-router.post("/register", authController.register);
+router.post("/register", middleware.auth.checkEmail, authController.register);
 
-router.post("/login", middleware.checkLoggedIn, authController.logIn);
+router.post(
+  "/login",
+  [middleware.auth.checkLoggedIn, middleware.auth.checkEmail],
+  authController.logIn
+);
 
-router.delete("/logout", middleware.checkAuthenticated, authController.logout);
+router.delete(
+  "/logout",
+  middleware.auth.checkAuthenticated,
+  authController.logout
+);
 
 module.exports = router;

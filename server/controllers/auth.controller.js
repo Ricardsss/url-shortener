@@ -43,7 +43,7 @@ passport.deserializeUser((user, done) => {
 
 const authController = {
   register: async (req, res) => {
-    const { name, email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
     const user = await User.findOne({ email: email });
     if (!user) {
       bcrypt.genSalt(10, (error, salt) => {
@@ -55,9 +55,10 @@ const authController = {
             return res.status(500).send("Server error.");
           }
           const user = new User({
-            name: name,
-            email: email,
-            hashedPassword: hashedPassword,
+            firstName,
+            lastName,
+            email,
+            hashedPassword,
           });
           await user.save();
           const newUser = { id: user._id, email: user.email };
@@ -65,7 +66,7 @@ const authController = {
             if (error) {
               return res.status(500).send("Server error.");
             }
-            res.send("Logged in successfully.");
+            res.send(`Logged in user with email ${email} successfully.`);
           });
         });
       });

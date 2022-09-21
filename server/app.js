@@ -5,6 +5,7 @@ const MongoStore = require("connect-mongo");
 const passport = require("passport");
 const connectDB = require("./database/mongoose");
 const authRouter = require("./routes/auth");
+const urlRouter = require("./routes/url");
 
 const PORT = process.env.PORT ? process.env.PORT : "3000";
 const MONGO_URI = process.env.MONGO_URI
@@ -20,7 +21,11 @@ const registerHooks = () => {
       secret: process.env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
+      rolling: true,
       store: MongoStore.create({ mongoUrl: MONGO_URI }),
+      cookie: {
+        expires: 1800000,
+      },
     })
   );
   app.use(passport.initialize());
@@ -29,6 +34,7 @@ const registerHooks = () => {
 
 const registerRoutes = () => {
   app.use("/auth", authRouter);
+  app.use("/", urlRouter);
 };
 
 const startServer = () => {
