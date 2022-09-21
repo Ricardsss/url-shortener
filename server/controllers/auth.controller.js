@@ -16,7 +16,7 @@ passport.use(
         bcrypt.compare(
           password,
           user.hashedPassword,
-          (error, isPasswordMatch) => {
+          async (error, isPasswordMatch) => {
             if (error) {
               return done(error);
             } else if (!isPasswordMatch) {
@@ -24,6 +24,8 @@ passport.use(
                 message: `Incorrect password for user with email ${email}.`,
               });
             } else {
+              user.lastLogin = Date.now();
+              await user.save();
               return done(null, user);
             }
           }
@@ -44,35 +46,29 @@ passport.deserializeUser((user, done) => {
 const authController = {
   register: async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
-    const user = await User.findOne({ email: email });
-    if (!user) {
-      bcrypt.genSalt(10, (error, salt) => {
+    bcrypt.genSalt(10, (error, salt) => {
+      if (error) {
+        return res.status(500).send(`Server error: ${error}.`);
+      }
+      bcrypt.hash(password, salt, async (error, hashedPassword) => {
         if (error) {
-          return res.status(500).send("Server error.");
+          return res.status(500).send(`Server error: ${error}.`);
         }
-        bcrypt.hash(password, salt, async (error, hashedPassword) => {
+        const user = new User({
+          firstName,
+          lastName,
+          email,
+          hashedPassword,
+        });
+        await user.save();
+        req.logIn(user, (error) => {
           if (error) {
-            return res.status(500).send("Server error.");
+            return res.status(500).send(`Server error: ${error}.`);
           }
-          const user = new User({
-            firstName,
-            lastName,
-            email,
-            hashedPassword,
-          });
-          await user.save();
-          const newUser = { id: user._id, email: user.email };
-          req.logIn(newUser, (error) => {
-            if (error) {
-              return res.status(500).send("Server error.");
-            }
-            res.send(`Logged in user with email ${email} successfully.`);
-          });
+          res.send(`Logged in user with email ${email} successfully.`);
         });
       });
-    } else {
-      res.status(400).send(`A user with the email ${email} already exists.`);
-    }
+    });
   },
   logIn: async (req, res) => {
     passport.authenticate("local", (error, user, info) => {
@@ -94,7 +90,7 @@ const authController = {
   logout: async (req, res) => {
     req.logout((error) => {
       if (error) {
-        return res.status(500).send("Server error.");
+        return res.status(500).send(`Server error: ${error}`);
       } else {
         res.send("Logged out successfully.");
       }

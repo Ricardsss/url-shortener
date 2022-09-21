@@ -32,19 +32,21 @@ const urlController = {
     }
   },
   goToUrl: async (req, res) => {
-    const { code } = req.params;
+    const url = req.url;
     try {
-      const urlBody = await URL.findById(code);
-      if (urlBody) {
-        if (urlBody.expirationDate > Date.now()) {
-          res.redirect(urlBody.originalURL);
-        } else {
-          await urlBody.delete();
-          res.status(400).send(`${BASE_URL}/${code} is not a valid URL.`);
-        }
-      } else {
-        res.status(400).send(`${BASE_URL}/${code} is not a valid URL.`);
-      }
+      res.redirect(url.originalURL);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send(`Server error: ${error}`);
+    }
+  },
+  deleteURL: async (req, res) => {
+    await req.session.touch();
+    const url = req.url;
+    try {
+      await url.delete();
+      req.url = null;
+      res.send(`${BASE_URL}/${url._id} has been deleted.`);
     } catch (error) {
       console.log(error);
       return res.status(500).send(`Server error: ${error}`);
